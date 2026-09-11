@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Quiz BK YEBO</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -963,12 +963,29 @@
 
   // Ne lit que le flag "started" d'un quiz sans l'activer — sert au
   // démarrage à savoir si un questionnaire est resté en cours.
+  //
+  // Un "started" sans la moindre réponse enregistrée n'est PAS considéré
+  // comme un vrai travail à protéger : state.started passe à true dès le
+  // clic sur "Commencer le quiz" (tryStart()), avant la moindre réponse.
+  // Si un collaborateur clique "Commencer" puis abandonne la page sans
+  // répondre ni cliquer sur "Valider"/"Annuler" (fermeture d'onglet,
+  // appareil reposé), l'appareil restait bloqué : le prochain collaborateur
+  // qui ouvrait le lien tombait directement dans le questionnaire (et
+  // l'identité) du précédent, sans repasser par l'écran de choix du quiz —
+  // signalé par l'utilisateur, qui voyait systématiquement s'ouvrir
+  // Quizz Foundation au lieu de l'écran "Choisis le questionnaire que tu
+  // vas passer". On exige donc au moins une réponse enregistrée pour
+  // qu'un "started" déclenche la reprise automatique ; sinon l'écran de
+  // choix redevient accessible normalement (voir Historique des
+  // corrections).
   function peekStarted(storageKey){
     try{
       var raw = localStorage.getItem(storageKey);
       if(!raw) return false;
       var parsed = JSON.parse(raw);
-      return !!(parsed && parsed.started);
+      if(!parsed || !parsed.started) return false;
+      var answers = parsed.answers;
+      return !!(answers && Object.keys(answers).length > 0);
     }catch(e){ return false; }
   }
 
